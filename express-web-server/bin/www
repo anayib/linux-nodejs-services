@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+'use strict'
+
+const app = require('../app');
+const http = require('http');
+
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(app);
+//createServer() creates a function that recieves a request and response object
+// An Express instance is a function that accepts a request and response object
+
+
+server.listen(PORT);
