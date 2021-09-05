@@ -1,0 +1,32 @@
+Arguments: 
+  /home/nayib/.nvm/versions/node/v12.19.0/bin/node /usr/share/yarn/bin/yarn.js add express http-errors
+
+PATH: 
+  /home/nayib/.local/bin:/home/nayib/.nvm/versions/node/v12.19.0/bin:/home/nayib/.local/bin:/home/nayib/.rvm/gems/ruby-2.6.2/bin:/home/nayib/.rvm/gems/ruby-2.6.2@global/bin:/usr/share/rvm/rubies/ruby-2.6.2/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/share/rvm/bin:/home/nayib/golib/bin
+
+Yarn version: 
+  1.22.4
+
+Node version: 
+  12.19.0
+
+Platform: 
+  linux x64
+
+Trace: 
+  Error: getaddrinfo ENOTFOUND registry.yarnpkg.com
+      at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:66:26)
+
+npm manifest: 
+  {
+    "name": "express-web-server-AF",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT"
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
