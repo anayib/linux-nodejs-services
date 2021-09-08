@@ -17,3 +17,50 @@ NodeJS services course examples
   - Listen to the server `server.listen(PORT)`
 - Star the server `yarn start`
 - Make requests to the server to validate the implementatio.
+
+## Fastify Web Server
+
+- `npm init fastify` // initializes the project with the basic structure
+- `npm run dev` // run the sever
+- Update `routes/root.js` file to update the content that deliver the `root.js` route.
+- Create any other route.
+- Set `fastify.setNotFoundHandler((request, reply) => {})` function to handle errors.
+
+Fastify is a NodeJS framework that allow to create services using RESTful arquitecture and also you can serve HTML.
+
+Its arquitecture is not based on middlewares, like Express, but on plugins.
+
+A plugin is a function that accepts a server instance as its first argument and an options object as a second. The plugin returns either a promise or a next() callback function.
+
+`async function (fastify, opts) {}`
+
+Routes in fastify are also plugins. And Plugins are also plugins. In any case, Plugins are like libraries that export specific functionalities.
+
+Express middlewares are executed for every request but Fastify Plugins are called only at initialization time (they are also asynchronous).
+
+When a route is define in a subfolder, the path to the route will be prefixed with the name of the subfolder. For instance: `routes/posts/index.js` all routs in index js will be prefixed with `/posts/`.
+
+## Lab 1 Implement a simple web sever: Deliver data from data.js
+
+Given a `data.js`, `package.json`, and `validate.js` files, create an HTTP server with any web framework that:
+
+* Listens to localhost
+* Listens on port 3000
+* Responds to HTTP GET request to / with **data** function from `data.js`.
+* Responds with 404 to GET requests to any other route.
+
+Run the following command to check weather the created server meets the criteria:
+`node validate`
+
+
+## Lab 2: Implement a Status code response
+
+Given the `package.json` and `validate.js` files, using any Node core library and/or web framework create an HTTP server that meets the following criteria:
+
+* Listens on localhost
+* Listens on port 3000
+* Responds to HTTP GET requests to `/`with a 200 OK HTTP status, the content is irrelevant
+* Responds to HTTP POST requests to `/` with a 405 Method Not Allowed HTTP status.
+
+The `package.json` `start` script must contain a command to start the server.
+`/home/nayib/Documents/programming_learning_local/linux_foundation/linux-nodejs-services/labs/ch-3/labs-2`
