@@ -1,0 +1,9 @@
+{
+  "name": "labs-2",
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
