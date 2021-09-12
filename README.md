@@ -1,6 +1,8 @@
 # linux-nodejs-services
 NodeJS services course examples
 
+# Creating basic web servers
+
 ## HTTP Server with Express
 - `yarn init -y`
 - `yarn add express http-errors`
@@ -26,7 +28,7 @@ NodeJS services course examples
 - Create any other route.
 - Set `fastify.setNotFoundHandler((request, reply) => {})` function to handle errors.
 
-Fastify is a NodeJS framework that allow to create services using RESTful arquitecture and also you can serve HTML.
+Fastify is a NodeJS framework that allows to create services using RESTful arquitecture and also you can serve HTML.
 
 Its arquitecture is not based on middlewares, like Express, but on plugins.
 
@@ -64,3 +66,72 @@ Given the `package.json` and `validate.js` files, using any Node core library an
 
 The `package.json` `start` script must contain a command to start the server.
 `/home/nayib/Documents/programming_learning_local/linux_foundation/linux-nodejs-services/labs/ch-3/labs-2`
+
+
+# Serving Web Content
+
+Static web content should be served via a CDN or a caching reverse proxy specialized in static content such as NGINX or Varnish. Node JS can serve static content but it is not ideal for this but to serve dynamic content.
+
+Learning objectives:
+
+* Learn how to serve static content with Express and Fastify
+* Learn to serve dynamic content with Express and Fastify
+* Learn to stream content with Express and Fastify.
+
+To serve static and dynamic content from Express and Fastify you must:
+
+- Configure from which folder in the app are you going to load the views.
+- Configure waht view engine are you going to use (ejs, handlebar, pug, etc ...)
+- Configure from which folder are you going to serve the static content.
+
+## Serving static content with Fastify
+
+- `npm init fastify`
+- `npm -save--dev fastify-static`
+- `npm install`
+- Update app.js folder to configure the root option to point to the public folder.
+
+    ```js
+      module.exports = async function (fastify, opts) {
+   7   if (dev) {
+   6     fastify.register(fastifyStatic, {
+   5       root: path.join(__dirname, 'public')
+   4     })
+   3   }
+   2   // This instructs fastify-static to only serve files from that folder, and not allow any files above that folder to be accessible
+   ```
+- Create a public directory with a `index.html` and `hello.html` files.
+- If you make a request to `localhost:3000` or `localhost:3000/index.html` it will serve the `index.html` file static content.
+- Make a request to `localhost:3000/hello.html`
+- We can also set a route that responds to a specific request with static content so that the requests are `localhost:3000/hello` and not `localhost:3000/hello.html`. To do this you need to create a route and response from the route with `reply.sendFile(<your.html file>)` method.
+- Create a routes/greetings folder
+- Create a `indenx.js` file
+```js
+'use strict'
+
+module.exports = async (fastify, opts) => {
+  fastify.get('/', async (request, reply) => {
+    return reply.sendFile('hello.html')
+  })
+}
+```
+
+## Serving dynamic content with Fastify
+
+The main use of fastify is to create data services. Nevertheless you can also create view rendering server using templates.
+
+In this example we use Handlebars as a template engine.
+
+- `npm init fastify` Creates fastify project
+- `npm install point-of-view handlebars` installs point-of-view pluggin which handles several template engines. Installs handlebars package.
+- `npm install` Install all dependencies.
+- Update app.js and routes as shown and explained in /fastify-web-server-dynamic
+
+## Serving Static Content with Express
+
+Express has built in tools to serve static content and dynamic content because it is more geared towards template rendering and static asset serving.
+
+Express generator package help you generate the structure of a Express project that already have the configuration for template rendering and static asset serving.
+
+- `npm install -g express-generator` installs express generator globally.
+## Serving Dynamic Content with Express
