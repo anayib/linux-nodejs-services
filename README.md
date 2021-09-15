@@ -134,4 +134,84 @@ Express has built in tools to serve static content and dynamic content because i
 Express generator package help you generate the structure of a Express project that already have the configuration for template rendering and static asset serving.
 
 - `npm install -g express-generator` installs express generator globally.
+
 ## Serving Dynamic Content with Express
+
+- Install express generator
+- Create a new project with express generator
+- If you do not use express generator yo need to set up the folder from which the views are going to be load and the view engine.
+- Check how the configuration to load the views from the `views` folder is done. Also check how the configuration to set the view engine is done and how to setup the directory o serve static files.
+- Update the routes and views to create a server similar to the fastify one requirements.
+- Run the server and check it works.
+
+## Streaming Content with Fastify
+
+The HTTP header Transfer-Encoding allows to transfer data in chunks so that the client does not have to wait until all the data is process from the server to start reading it.
+
+Node Streams allow to read, process, and write data in chunks. Using streams to transfer data, allows the client to parse HTML (or any data structure) before the server has completely process it.
+
+- `npm init fastify`
+- Hacker News package to get latest news `hn-latest-stream` calling in when required returns a stream which fastify handles to deliver the content in chuncks
+- Check the implementation of streaming content in fastify-streaming-content/routes/root.js
+- Make a request to localhost:3000 to get the contnet in chuncks or to `curl -X GET localhost:3000?type=json&amount=10` to get it in json format.
+
+| The highlight is that you need to return a Stream from the route callback so that it is handled as chunks when passed as an argument to the return value.
+
+
+## Streaming Content with Express
+
+IN brief, to stream content you `pipe` the readable sream to the writable `res` response stream and listen until the readable stream finished `stream.finished`. Then you end the `res` stream so that you reply the request at the same time you end reading from the readable stream.
+
+Check an example in `routes/index.js` in `./express-streaming-content`.
+
+# Creating RESTful JSON services
+
+RSTFul is an architectural style to implement web services. The interchange format used in this architecture is JSON.
+
+RSTful architecture allows to create interoperability between service-service and service-client.
+
+[Architectural styles and design of network based software architectures](https://www.ics.uci.edu/~fielding/pubs/dissertation/top.html)
+
+
+RESTful pretend to make the most out of the features of HTTP. IN HTTP the metadata is transfered via the headers, the data via the body, and the resulting outcome of the communication via HTTP status codes.
+
+A REST service is stateless. It is an intermediate layer between the browser and the database. It should handle at least the CRUD operations.
+
+Learning objectives:
+
+* Understand how to implement and deploy a RESTful JSON service.
+* Know the minimum fucntional criteria that a RESTFul JSON service should satisfy.
+
+
+## Fastify RESTful JSON service implementation
+
+* Create a fastify project `npm init fastify`
+* Install the dependencies `npm install`
+* Install `fastify-sensible` plugin to handle HTTP status codes and messages.
+* Create a mock data file `model.js`. This file exports an instance of a function that mocks reading asynchronously from a DDBB.
+* Create a `/bicycle` route `./routes/bicycle/index.js`
+* Require the `model.js` file in `./routes/bicycles/indexjs` and implement a route that recieve a parameter `:id:`, reads the bicycle from the model and send the payload to the client or handle any error.
+
+Implement the GET method handler to read bicycles form `model.js`:
+* Synchronous
+* Asynchronous  with callback API
+* Asynchronous promesifying the `read` function.
+
+Basic requirements for a GET route
+
+* Respond with a valid JSON payload.
+* Respond with an application/json Content-Type header.
+* Respond with 200 status code when successful.
+* Respond with a 404 status when a requested resource is not available. This would be when the read function in model.js responds with an error with message 'not found'.
+* Respond with a 400, 404 or 405 for unsupported methods. For instance a POST to our server should respond with one of these codes, it doesn't matter which as the specification is ambiguous on these points and it can come down to implementation goals or wider policy.
+* Respond with a 500 status for unknown errors.
+
+## Express RESTful JSON service implementation
+
+* Create a Express project
+* Create tne route to handle the GET request
+* Implement the middleware to handle errors in the sever filei
+* Handle a 404 error if the request is to a route different to the one required.
+
+CHeck labs/ch-5/labs-1
+
