@@ -14,6 +14,7 @@ router.get('/:id', async (req, res, next) => {
     const payload = await boatRead(id)
     res.status(200).json(payload)
   } catch (err) {
-    res.status(404).json(err)
+    if (err.message === "not found") next();
+    next(err);
   }
 });
