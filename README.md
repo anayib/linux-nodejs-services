@@ -213,5 +213,25 @@ Basic requirements for a GET route
 * Implement the middleware to handle errors in the sever filei
 * Handle a 404 error if the request is to a route different to the one required.
 
-CHeck labs/ch-5/labs-1
+Check labs/ch-5/labs-1
 
+## Implemente a RESTful HTTP server with JSON
+
+* The server should support a GET request to boat/:id
+* Support a post request to /boat
+* The route should accept and respond only with `application/json` content-type.
+* The post request should respond with this format `{ data: {brand, colot} }`
+* Successful request to a POST should respond with 201 HTTP status code.
+* POST request errors should be handled with 500 HTTP status code - Sever Error Response -.
+* The server should support GET/POST/DELETE routes
+* run `node validate` to check the result.
+
+Check `labs/ch-6/labs-1-fastyfy/routes/boat/index.js` - Implementation with fastify
+
+* `npm init fastify`
+* Implement endpoints based on model.js API
+
+Check `labs/ch-6/labs-1-express/routes/boat/index.js` - Implementation with express
+
+CHECK `labs/ch-6/labs-1-express` for express implementation
+CHECK `labs/ch-6/labs-1-fastyfy` for fastify implementation
