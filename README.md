@@ -235,3 +235,23 @@ Check `labs/ch-6/labs-1-express/routes/boat/index.js` - Implementation with expr
 
 CHECK `labs/ch-6/labs-1-express` for express implementation
 CHECK `labs/ch-6/labs-1-fastyfy` for fastify implementation
+
+## Consuming Services
+
+Some times you need several services to communicate between them. There are many ways to implement this. One way is injecting a base URL at `process.env` or another one is injecting a port number at `process.env` using in both cases environment variables.
+
+Find an implementation of services consuming each other  at `./consuming-services`. These are services implemented to run locally and they are not production ready. For production services use frameworks.
+
+The consumer service is impleemnted with fastify, the providers with plain node core http module. We use fatify `got` library to make requests to the services and `fastify-sensible` to generate http errors.
+
+### Consuming service from another one
+
+This is an example of fetching data from a service to another `./consuming-services/consumer/routes/root.js`
+
+### Combining a service with another one
+
+- Making request one after the previous resolved `./consuming-services/consumer/routes/root-combine-services.js`
+
+- Making requests concurrently with `Promise.all([])` : `./consuming-services/consumer/routes/root-combine-services-concurrently.js`
+
+Check `./labs/ch-7/labs-1` for an additional example on data aggregating/combining service
