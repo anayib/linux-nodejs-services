@@ -238,6 +238,8 @@ CHECK `labs/ch-6/labs-1-fastyfy` for fastify implementation
 
 ## Consuming Services
 
+You will learn how to create services that consume other HTTP services.
+
 Some times you need several services to communicate between them. There are many ways to implement this. One way is injecting a base URL at `process.env` or another one is injecting a port number at `process.env` using in both cases environment variables.
 
 Find an implementation of services consuming each other  at `./consuming-services`. These are services implemented to run locally and they are not production ready. For production services use frameworks.
@@ -255,3 +257,12 @@ This is an example of fetching data from a service to another `./consuming-servi
 - Making requests concurrently with `Promise.all([])` : `./consuming-services/consumer/routes/root-combine-services-concurrently.js`
 
 Check `./labs/ch-7/labs-1` for an additional example on data aggregating/combining service
+
+Details of a sample implementation:
+* Create a file with two simple services that deliver mock data Eg: `./labs/ch-7/labs-1/boat-service.js`.
+* Initialize a fastify projects `npm init fastify`
+* Import the ENV variales to set the port of the provider services.
+* Update the route of the consumer service to aggregate data from the 2 provider services.
+    * Install fastify-sensible - to handle errors- and got ligraries - to make requests - `npm install got fastify-sensible`.
+* Update the package.json to start the service with `npm start`
+
