@@ -27,6 +27,10 @@
     }
   
     function create (id, data, cb) {
+      if (data.brand === '0737') {
+        setImmediate(() => cb(Error('unknown')))
+        return
+      }
       if (db.hasOwnProperty(id)) {
         const err = Error('resource exists')
         err.code = 'E_RESOURCE_EXISTS'
