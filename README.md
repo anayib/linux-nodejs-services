@@ -266,3 +266,575 @@ Details of a sample implementation:
     * Install fastify-sensible - to handle errors- and got ligraries - to make requests - `npm install got fastify-sensible`.
 * Update the package.json to start the service with `npm start`
 
+# Proxying
+
+An HTTP Proxy is a server that forward http request to backend services and then forward responses to the clients. NGINX and Kong are services to implement proxies. You can also create your own proxy services with NodeJS.
+
+What you will learn:
+- Proxy HTTP request for a single route.
+- Modify data during proxying.
+- Create a full proxy server
+## Single route multiorigin Proxy
+
+In this case our proxy supplies the desired endpoint using a url query string parameter. In other words, the request to our server replies with the response from the endpoint we passed as a query param.
+
+check `./my-route-proxy`
+
+## Single Origin, Multi-Route Proxy
+
+Proxying any request to any route in another server
+check `./http-proxy-fastify`
+
+Labs
+- Implement a HTTP Route Based Proxy `./labs/ch-8/labs-1`  .
+This proxy allows to make requests to a specific route in another service. Our proxy server forwards the request and replies with the third party service response.
+- Implement a full proxying service `./labs/ch-8/labs-2`
+This proxy allows to forward request to any server and any of its routes and handles any response from any route to be forward to the client that made the request to our proxy.
+
+## Security
+
+Objectives
+- Learn how to avoid parameter pollution
+- Learn how to do route validation
+
+### Errors parsing query strings
+- Parsing a query string could result in a string or an array. If handled improperly it would generate an error.
+eg:`?name=bob&name=dave`  | this query string would generate the following object `{name: ['bob', 'dave']}`
+If you call string methods on what is supposed a string as a value of the key for `{name: 'dave'}` but you are really getting an array, you will have an error.
+
+| Parameter pollution attack is an attack Making a request to a URL where two query-string parameters with the same name are set in hopes of exploiting a common developer error in order to crash or slow down a service
+
+The following code will generate an error if the query string is `?name="Nayib&name="Carlos"` because the query string name/key contains an array instead of a string and there is not a `split()` Array method.
+
+```js
+router.get('/', (req, res, next) => {
+  someAsynchronousOperation(() => {
+    if (!req.query.name) {
+      var err = new Error('Bad Request')
+      err.status = 400
+      next(err)
+      return
+    }
+    var parts = req.query.name.split(' ');
+    var last = parts.pop();
+    var first = parts.shift();
+    res.send({first: first, last: last});
+  })
+});
+```
+There is no way to catch unhandled exceptions that raise in asynchronous operations with express while you can handle them with fastify (async/away).
+
+A way to solve it is validating the query keys types, checking if the values are strings or arrays - with Array.isArray(arr) -
+
+```js
+function convert (name) {
+  var parts = name.split(' ');
+  var last = parts.pop();
+  var first = parts.shift();
+  return {first: first, last: last};
+}
+router.get('/', (req, res, next) => {
+  someAsynchronousOperation(() => {
+    if (!req.query.name) {
+      var err = new Error('Bad Request')
+      err.status = 400
+      next(err)
+      return
+    }
+    if (Array.isArray(req.query.name)) {
+      res.send(req.query.name.map(convert));
+    } else {
+      res.send(convert(req.query.name));
+    }
+  });
+});
+```
+### Validating the body of the request with Fastify
+
+When usign Fastify validate routes using the `schema` options which helps declare and validate the rules for incoming and outgoing data. It is used in JSONSchema format.
+
+Up until now we've only seen route methods (as in, fastify.post) take two arguments: the route to serve as a string and the route handler function. A third options argument can be passed in between the route string and the route handler function. [See](https://www.fastify.io/docs/latest/Routes/#options) for a full list of options
+
+The schema option supports body, query, params, headers and response as schemas that can be declared for these areas of input (or output in the case of response)
+
+The `schema` is an object of options passed to the http verbs methods as a second parameter, after the route pattern, so that you validate the incoming data type/structure.
+
+For a post route as follows:
+```js
+  fastify.post('/', async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+  })
+```
+You could use `schema` for the incoming data validation as follows given the fact that we have a `request.body` that should return an object in the following form `{ data: { brand, color } }`:
+```js
+ fastify.post('/', {
+   schema: {
+      body: {
+        type: 'object',
+        required: ['data'],
+        additionalProperties: false,
+        properties: {
+          data: {
+            type: 'object',
+            required: ['brand', 'color'],
+            additionalProperties: false,
+            properties: {
+              brand: {type: 'string'},
+              color: {type: 'string'}
+            }
+          }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+  })
+```
+
+One of the route options is the schema which is an object containing the schemas for the request and response. They need to be in JSON Schema format, [check here](https://www.fastify.io/docs/latest/Validation-and-Serialization/)
+
+We can **reuse a schema validator** saving setting a schema to a variable an referencing it as an option in other routes. Check the `POST` and `PUT` routes:
+
+```js
+// app.js
+'use strict'
+const { promisify } = require('util')
+const { bicycle } = require('../../model')
+const { uid } = bicycle
+const read = promisify(bicycle.read)
+const create = promisify(bicycle.create)
+const update = promisify(bicycle.update)
+const del = promisify(bicycle.del)
+
+module.exports = async (fastify, opts) => {
+  const { notFound } = fastify.httpErrors
+
+  const bodySchema = {
+    type: 'object',
+    required: ['data'],
+    additionalProperties: false,
+    properties: {
+      data: {
+        type: 'object',
+        required: ['brand', 'color'],
+        additionalProperties: false,
+        properties: {
+          brand: {type: 'string'},
+          color: {type: 'string'}
+        }
+      }
+    }
+  }
+
+  fastify.post('/', {
+    schema: {
+      body: bodySchema
+    }
+  }, async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+  })
+
+  fastify.post('/:id/update', {
+    schema: {
+      body: bodySchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await update(id, data)
+      reply.code(204)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+  fastify.put('/:id', {
+    schema: {
+      body: bodySchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await create(id, data)
+      reply.code(201)
+      return { }
+    } catch (err) {
+      if (err.message === 'resource exists') {
+        await update(id, data)
+        reply.code(204)
+      } else {
+        throw err
+      }
+    }
+  })
+
+ ```
+
+### Validating the request params with fastify
+
+ We can apply **validation to route parameters** with the `schema.params` option. Lets say a route accepts a param - that has to be an integer - for the `GET` `POST/PUT` and `DELETE` routes:
+
+ ```js
+const paramsSchema = {
+    id: {
+      type: 'integer'
+    }
+  }
+ ```
+
+ ```js
+ // app.js
+
+ 'use strict'
+const { promisify } = require('util')
+const { bicycle } = require('../../model')
+const { uid } = bicycle
+const read = promisify(bicycle.read)
+const create = promisify(bicycle.create)
+const update = promisify(bicycle.update)
+const del = promisify(bicycle.del)
+
+module.exports = async (fastify, opts) => {
+  const { notFound } = fastify.httpErrors
+
+  const bodySchema = {
+    type: 'object',
+    required: ['data'],
+    additionalProperties: false,
+    properties: {
+      data: {
+        type: 'object',
+        required: ['brand', 'color'],
+        additionalProperties: false,
+        properties: {
+          brand: {type: 'string'},
+          color: {type: 'string'}
+        }
+      }
+    }
+  }
+
+  const paramsSchema = {
+    id: {
+      type: 'integer'
+    }
+  }
+
+  fastify.post('/', {
+    schema: {
+      body: bodySchema
+    }
+  }, async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+  })
+
+  fastify.post('/:id/update', {
+    schema: {
+      body: bodySchema,
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await update(id, data)
+      reply.code(204)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+  fastify.get('/:id', {
+    schema: {
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    try {
+      return await read(id)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+  fastify.put('/:id', {
+    schema: {
+      body: bodySchema,
+      params: paramsSchema
+
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await create(id, data)
+      reply.code(201)
+      return { }
+    } catch (err) {
+      if (err.message === 'resource exists') {
+        await update(id, data)
+        reply.code(204)
+      } else {
+        throw err
+      }
+    }
+  })
+
+  fastify.delete('/:id', {
+    schema: {
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    try {
+      await del(id)
+      reply.code(204)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+}
+```
+
+### Validating the response with Fastify
+
+We validate the response by passing options to the `schema.response` object.
+
+For the `POST` route we respond with an `id` and for the `GET` route we do with an `object` that should include specific properties. We could validate this by checking the data type of the response in each route. Eg:
+
+Response validation for the `POST` route - check the `schema.response.201` object:
+
+```js
+// previous code not included
+
+const idSchema = { type: 'integer' }
+const paramsSchema = { id: idSchema }
+
+ fastify.post('/', {
+    schema: {
+      body: bodySchema,
+      response: {
+        201: {
+          id: idSchema
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+ });
+
+```
+
+Response validation for the `GET` route - check the `shcema.response.200` object.
+
+```js
+// previous code not included
+
+ const dataSchema = {
+    type: 'object',
+    required: ['brand', 'color'],
+    additionalProperties: false,
+    properties: {
+      brand: {type: 'string'},
+      color: {type: 'string'}
+    }
+  }
+
+
+fastify.get('/:id', {
+    schema: {
+      params: paramsSchema,
+      response: {
+        200: dataSchema
+      }
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    try {
+      return await read(id)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+```
+
+Final example file with request and response routes validations
+
+```js
+// app.js
+
+'use strict'
+const { promisify } = require('util')
+const { bicycle } = require('../../model')
+const { uid } = bicycle
+const read = promisify(bicycle.read)
+const create = promisify(bicycle.create)
+const update = promisify(bicycle.update)
+const del = promisify(bicycle.del)
+
+module.exports = async (fastify, opts) => {
+  const { notFound } = fastify.httpErrors
+
+  const dataSchema = {
+    type: 'object',
+    required: ['brand', 'color'],
+    additionalProperties: false,
+    properties: {
+      brand: {type: 'string'},
+      color: {type: 'string'}
+    }
+  }
+
+  const bodySchema = {
+    type: 'object',
+    required: ['data'],
+    additionalProperties: false,
+    properties: {
+      data: dataSchema
+    }
+  }
+
+  const idSchema = { type: 'integer' }
+  const paramsSchema = { id: idSchema }
+
+  fastify.post('/', {
+    schema: {
+      body: bodySchema,
+      response: {
+        201: {
+          id: idSchema
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { data } = request.body
+    const id = uid()
+    await create(id, data)
+    reply.code(201)
+    return { id }
+  })
+
+  fastify.post('/:id/update', {
+    schema: {
+      body: bodySchema,
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await update(id, data)
+      reply.code(204)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+  fastify.get('/:id', {
+    schema: {
+      params: paramsSchema,
+      response: {
+        200: dataSchema
+      }
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    try {
+      return await read(id)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+
+  fastify.put('/:id', {
+    schema: {
+      body: bodySchema,
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    const { data } = request.body
+    try {
+      await create(id, data)
+      reply.code(201)
+      return { }
+    } catch (err) {
+      if (err.message === 'resource exists') {
+        await update(id, data)
+        reply.code(204)
+      } else {
+        throw err
+      }
+    }
+  })
+
+  fastify.delete('/:id', {
+    schema: {
+      params: paramsSchema
+    }
+  }, async (request, reply) => {
+    const { id } = request.params
+    try {
+      await del(id)
+      reply.code(204)
+    } catch (err) {
+      if (err.message === 'not found') throw notFound()
+      throw err
+    }
+  })
+}
+```
+
+While invalidation of input-related schemas (such as schema.body) will result in a 400 Bad Request, the invalidation of a response schema will result in a 500 Server Error result.
+
+
+### Security labs
+
+1. Implement a Service That Is Not Vulnerable to Parameter Pollution
+2. Validate a POST Request
+3. Validate a GET Response
+
+Check [url pollution and route validation labs](./labs/ch-9/); at `labs/ch-9/labs-2`.
+
+# Learn how to block an attacker's IP address
+
+## Blocking an IP address with Fastify
+
+
+## Blocking an IP address with Express
+
+### Blocking IP address labs
+
+1. Block an attacker's IP address with express.
+2. Block an attacker's IP address with fastify.
+
