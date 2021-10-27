@@ -19,7 +19,7 @@
   },
   "scripts": {
     "test": "tap \"test/**/*.test.js\"",
-    "start": "node boat-service.js brand-service.js && fastify star -l info app.js",
+    "start": "BOAT_SERVICE_PORT=3333 node boat-service.js & BRAND_SERVICE_PORT=3334 node brand-service.js & PORT=3000 fastify star -l info app.js",
     "dev": "fastify start -w -l info -P app.js"
   },
   "keywords": [],

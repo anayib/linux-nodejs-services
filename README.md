@@ -4,6 +4,9 @@ NodeJS services course examples
 # Creating basic web servers
 
 ## HTTP Server with Express
+
+In this implementation it is created a `./bin/www` file and a `app.js` file. The `./bin/www` contains the server creation and initialization which receives the `app` as an argument. The `app.js` file should only contain `app` object initialization, middlewares and routes. This way you separate the logic of the `app` from the logic of the server creation and start.
+
 - `yarn init -y`
 - `yarn add express http-errors`
 - Update the package.json file adding scripts to make `yarn start` work running `node ./bin/www` or the file with the server.
