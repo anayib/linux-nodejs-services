@@ -1,0 +1,6 @@
+BICYCLE_SERVICE_PORT=4000
+BRAND_SERVICE_PORT=5000
+
+PORT="$BICYCLE_SERVICE_PORT" node ../bicycle-service.js &
+PORT="$BRAND_SERVICE_PORT" node ../brand-service.js &
+PORT=3001 node ./bin/www

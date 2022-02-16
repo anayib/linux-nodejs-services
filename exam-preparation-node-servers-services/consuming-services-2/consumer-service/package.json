@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon ./bin/www",
+    "start-all": "sh npm_start_script",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
